@@ -1,3 +1,3 @@
 # receita8
 
-A new Flutter project.
+Trabalho referente a receita 7 e 8
