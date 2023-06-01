@@ -9,11 +9,11 @@ class DataService {
   final ValueNotifier<Map<String, dynamic>> tableStateNotifier =
       ValueNotifier({'status': TableStatus.idle, 'dataObjects': []});
 
-  void load(index) {
-    final List<void Function()> functions = [
-      loadCoffee,
-      loadBeers,
-      loadNations
+  void carregar(index) {
+    final List<void Function()> funcoes = [
+      carregarCafe,
+      carregarCervejas,
+      carregarNacoes
     ];
 
     tableStateNotifier.value = {
@@ -21,10 +21,10 @@ class DataService {
       'dataObjects': []
     };
 
-    functions[index]();
+    funcoes[index]();
   }
 
-  void loadCoffee() {
+  void carregarCafe() {
     var coffeeUri = Uri(
       scheme: 'https',
       host: 'random-data-api.com',
@@ -32,8 +32,8 @@ class DataService {
       queryParameters: {'size': '10'},
     );
 
-    http.read(coffeeUri).then((jsonString) {
-      var coffeeJson = jsonDecode(jsonString);
+    http.read(coffeeUri).then((jsonSting) {
+      var coffeeJson = jsonDecode(jsonSting);
 
       tableStateNotifier.value = {
         'status': TableStatus.ready,
@@ -46,7 +46,7 @@ class DataService {
     }, test: (error) => error is Exception);
   }
 
-  void loadBeers() {
+  void carregarCervejas() {
     var beersUri = Uri(
       scheme: 'https',
       host: 'random-data-api.com',
@@ -68,7 +68,7 @@ class DataService {
     }, test: (error) => error is Exception);
   }
 
-  void loadNations() {
+  void carregarNacoes() {
     var nationUri = Uri(
       scheme: 'https',
       host: 'random-data-api.com',
@@ -110,6 +110,15 @@ class MyApp extends StatelessWidget {
         body: Container(
           width: double.infinity,
           height: double.infinity,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: NetworkImage(
+                  'https://i.imgur.com/Cufu8pW.jpg'),
+              colorFilter: ColorFilter.mode(
+                  Colors.white.withOpacity(0.4), BlendMode.dstATop),
+              fit: BoxFit.cover,
+            ),
+          ),
           child: ValueListenableBuilder(
             valueListenable: dataService.tableStateNotifier,
             builder: (_, value, __) {
@@ -120,7 +129,7 @@ class MyApp extends StatelessWidget {
                       "Seja bem vindo(a)\nPor favor, clique em algum botão para continuar",
                       style: TextStyle(
                         fontSize: 50,
-                        color: Colors.blue,
+                        color: Colors.black,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
@@ -153,6 +162,7 @@ class MyApp extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         color: Colors.red,
+                        fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -163,7 +173,7 @@ class MyApp extends StatelessWidget {
             },
           ),
         ),
-        bottomNavigationBar: NewNavBar(itemSelectedCallback: dataService.load),
+        bottomNavigationBar: NewNavBar(itemSelectedCallback: dataService.carregar),
       ),
     );
   }
@@ -196,7 +206,7 @@ class NewNavBar extends HookWidget {
           label: label,
           icon: Text(
             getIconForLabel(label),
-            style: TextStyle(fontSize: 30),
+            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
           ),
         );
       }).toList(),
@@ -232,41 +242,41 @@ class DataTableWidget extends StatefulWidget {
 }
 
 class _DataTableWidgetState extends State<DataTableWidget> {
-  List<DataRow> dataRows = [];
+  List<DataRow> getRows() {
+    return widget.jsonObjects.map<DataRow>((jsonObject) {
+      final cells = widget.propertyNames
+          .map<DataCell>((propertyName) => DataCell(Text(
+                jsonObject[propertyName].toString(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              )))
+          .toList();
 
-  @override
-  void initState() {
-    super.initState();
-    loadDataRows();
-  }
-
-  @override
-  void didUpdateWidget(DataTableWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.jsonObjects != widget.jsonObjects) {
-      loadDataRows();
-    }
-  }
-
-  void loadDataRows() {
-    dataRows = widget.jsonObjects.map<DataRow>((jsonObject) {
-      final cells = widget.propertyNames.map<DataCell>((propertyName) {
-        return DataCell(Text(jsonObject[propertyName].toString()));
-      }).toList();
       return DataRow(cells: cells);
     }).toList();
+  }
+
+  List<DataColumn> getColumns() {
+    return widget.columnNames
+        .map<DataColumn>((columnName) => DataColumn(
+              label: Text(
+                columnName,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columns: widget.columnNames.map((name) => DataColumn(label: Text(name, style: TextStyle(color: Colors.blue)))) .toList(),
-          rows: dataRows,
-        ),
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: getColumns(),
+        rows: getRows(),
       ),
     );
   }
